@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Drug Formulary — Searchable Drug List</title>
+<style>
+  /* ============ THEME TOKENS ============ */
+  :root{
+    --bg:#eef2f9;
+    --bg-grad-1:rgba(99,102,241,.18);
+    --bg-grad-2:rgba(16,185,129,.14);
+    --surface:#ffffff;
+    --surface-2:#f7f9fc;
+    --surface-3:#eef2f8;
+    --text:#0f172a;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --border-strong:#cbd5e1;
+    --accent:#4f46e5;
+    --accent-2:#7c3aed;
+    --accent-soft:rgba(79,70,229,.10);
+    --good:#059669;
+    --good-bg:rgba(16,185,129,.12);
+    --warn:#b45309;
+    --warn-bg:rgba(245,158,11,.15);
+    --info:#0369a1;
+    --info-bg:rgba(14,165,233,.13);
+    --purple:#6d28d9;
+    --purple-bg:rgba(139,92,246,.13);
+    --rose:#be123c;
+    --rose-bg:rgba(244,63,94,.12);
+    --shadow-sm:0 1px 2px rgba(15,23,42,.06);
+    --shadow:0 2px 4px rgba(15,23,42,.05), 0 12px 28px -14px rgba(15,23,42,.30);
+    --shadow-lg:0 4px 8px rgba(15,23,42,.06), 0 24px 48px -20px rgba(15,23,42,.38);
+    --radius:18px;
+  }
+  [data-theme="dark"]{
+    --bg:#080c18;
+    --bg-grad-1:rgba(99,102,241,.22);
+    --bg-grad-2:rgba(16,185,129,.12);
+    --surface:#111a2e;
+    --surface-2:#16203a;
+    --surface-3:#1b2742;
+    --text:#e8eefb;
+    --muted:#93a4c2;
+    --border:#233150;
+    --border-strong:#33456b;
+    --accent:#818cf8;
+    --accent-2:#a78bfa;
+    --accent-soft:rgba(129,140,248,.16);
+    --good:#34d399;
+    --good-bg:rgba(52,211,153,.14);
+    --warn:#fbbf24;
+    --warn-bg:rgba(251,191,36,.14);
+    --info:#38bdf8;
+    --info-bg:rgba(56,189,248,.14);
+    --purple:#c4b5fd;
+    --purple-bg:rgba(196,181,253,.14);
+    --rose:#fb7185;
+    --rose-bg:rgba(251,113,133,.14);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow:0 2px 4px rgba(0,0,0,.35), 0 16px 32px -16px rgba(0,0,0,.75);
+    --shadow-lg:0 4px 10px rgba(0,0,0,.45), 0 28px 56px -20px rgba(0,0,0,.85);
+  }
+
+  *{box-sizing:border-box;}
+  html{ height:100%; }
+  body{
+    margin:0;
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    transition:background .35s ease,color .35s ease;
+    min-height:100vh;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:-20% -10% auto -10%;
+    height:70vh;
+    background:
+      radial-gradient(45% 60% at 18% 20%, var(--bg-grad-1), transparent 70%),
+      radial-gradient(40% 55% at 85% 10%, var(--bg-grad-2), transparent 70%);
+    pointer-events:none;
+    z-index:0;
+    filter:blur(10px);
+  }
+
+  /* ============ HEADER (STICKY SEARCH) ============ */
+  .header{
+    position:-webkit-sticky;
+    position:sticky;
+    top:0;
+    z-index:100;
+    backdrop-filter:blur(18px) saturate(160%);
+    -webkit-backdrop-filter:blur(18px) saturate(160%);
+    background:color-mix(in srgb, var(--surface) 82%, transparent);
+    border-bottom:1px solid var(--border);
+    transition:box-shadow .25s ease, background .35s ease;
+  }
+  .header.scrolled{
+    box-shadow:0 1px 0 var(--border), 0 10px 30px -14px rgba(15,23,42,.22);
+  }
+  [data-theme="dark"] .header.scrolled{
+    box-shadow:0 1px 0 var(--border), 0 10px 30px -14px rgba(0,0,0,.6);
+  }
+  .header-inner{
+    max-width:1500px;
+    margin:0 auto;
+    padding:14px 22px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:13px;min-width:max-content;}
+  .logo{
+    width:46px;height:46px;border-radius:14px;
+    display:grid;place-items:center;
+    font-size:24px;font-weight:800;color:#fff;
+    background:linear-gradient(140deg,var(--accent),var(--accent-2));
+    box-shadow:0 8px 20px -8px var(--accent);
+    letter-spacing:-1px;
+    flex-shrink:0;
+  }
+  .brand h1{
+    margin:0;font-size:19px;font-weight:800;letter-spacing:-.4px;line-height:1.15;
+  }
+  .brand p{margin:2px 0 0;font-size:12px;color:var(--muted);font-weight:500;}
+
+  .search-wrap{
+    position:relative;
+    flex:1 1 340px;
+    min-width:220px;
+    display:flex;
+    align-items:center;
+  }
+  .search-wrap svg{
+    position:absolute;left:15px;width:18px;height:18px;
+    color:var(--muted);pointer-events:none;transition:color .2s;
+  }
+  #search{
+    width:100%;
+    padding:13px 44px 13px 45px;
+    font-size:14.5px;
+    font-family:inherit;
+    color:var(--text);
+    background:var(--surface-2);
+    border:1.5px solid var(--border);
+    border-radius:14px;
+    outline:none;
+    transition:border-color .2s, box-shadow .2s, background .2s;
+  }
+  #search::placeholder{color:var(--muted);}
+  #search:focus{
+    border-color:var(--accent);
+    background:var(--surface);
+    box-shadow:0 0 0 4px var(--accent-soft);
+  }
+  .search-wrap:focus-within svg{color:var(--accent);}
+  #clearSearch{
+    position:absolute;right:9px;
+    width:28px;height:28px;border-radius:9px;
+    border:none;cursor:pointer;
+    background:transparent;color:var(--muted);
+    font-size:19px;line-height:1;
+    display:none;place-items:center;
+    transition:background .18s,color .18s;
+  }
+  #clearSearch:hover{background:var(--surface-3);color:var(--text);}
+  #clearSearch.show{display:grid;}
+
+  .icon-btn{
+    width:46px;height:46px;flex-shrink:0;
+    border-radius:14px;
+    border:1.5px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text);
+    font-size:19px;
+    cursor:pointer;
+    display:grid;place-items:center;
+    transition:transform .18s, background .2s, border-color .2s, box-shadow .2s;
+  }
+  .icon-btn:hover{background:var(--surface-3);border-color:var(--border-strong);transform:translateY(-1px);}
+  .icon-btn:active{transform:scale(.95);}
+
+  /* ============ FILTER BAR (NOT sticky) ============ */
+  .filters{
+    background:var(--bg);
+    border-bottom:1px solid var(--border);
+    transition:background .35s ease;
+  }
+  .filters-inner{
+    max-width:1500px;margin:0 auto;
+    padding:12px 22px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .filters select{
+    appearance:none;
+    -webkit-appearance:none;
+    font-family:inherit;
+    font-size:13px;font-weight:600;
+    color:var(--text);
+    background:var(--surface);
+    background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 11px center;
+    background-size:14px;
+    padding:10px 34px 10px 14px;
+    border:1.5px solid var(--border);
+    border-radius:12px;
+    cursor:pointer;
+    outline:none;
+    transition:border-color .2s, box-shadow .2s, background-color .2s;
+    max-width:230px;
+    text-overflow:ellipsis;
+  }
+  .filters select:hover{border-color:var(--border-strong);}
+  .filters select:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft);}
+  .filters select.filled{border-color:var(--accent);background-color:var(--accent-soft);}
+
+  .toggle{
+    display:inline-flex;align-items:center;gap:7px;
+    font-size:13px;font-weight:700;
+    padding:10px 15px;
+    border-radius:12px;
+    border:1.5px solid var(--border);
+    background:var(--surface);
+    color:var(--muted);
+    cursor:pointer;
+    user-select:none;
+    transition:all .2s;
+    white-space:nowrap;
+  }
+  .toggle:hover{border-color:var(--border-strong);color:var(--text);}
+  .toggle .pip{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--border-strong);
+    transition:all .2s;
+  }
+  .toggle.on{color:var(--good);border-color:var(--good);background:var(--good-bg);}
+  .toggle.on .pip{background:var(--good);box-shadow:0 0 0 3px var(--good-bg);}
+  .toggle.vital.on{color:var(--info);border-color:var(--info);background:var(--info-bg);}
+  .toggle.vital.on .pip{background:var(--info);box-shadow:0 0 0 3px var(--info-bg);}
+
+  .spacer{flex:1;}
+  #resetBtn{
+    font-family:inherit;font-size:13px;font-weight:700;
+    padding:10px 15px;border-radius:12px;
+    border:1.5px dashed var(--border-strong);
+    background:transparent;color:var(--muted);
+    cursor:pointer;transition:all .2s;white-space:nowrap;
+  }
+  #resetBtn:hover{color:var(--rose);border-color:var(--rose);background:var(--rose-bg);}
+
+  /* ============ STATS ============ */
+  .stats{
+    max-width:1500px;margin:0 auto;
+    padding:16px 22px 4px;
+    display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;
+    font-size:13.5px;color:var(--muted);font-weight:600;
+  }
+  .stats b{color:var(--text);font-weight:800;font-size:15px;}
+  .stats .dot{width:4px;height:4px;border-radius:50%;background:var(--border-strong);}
+
+  /* ============ GRID ============ */
+  .grid{
+    max-width:1500px;
+    margin:0 auto;
+    padding:14px 22px 70px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+    gap:18px;
+    position:relative;
+    z-index:1;
+  }
+
+  /* ============ CARD ============ */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow-sm);
+    padding:18px 18px 14px;
+    display:flex;flex-direction:column;
+    transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+    animation:pop .35s cubic-bezier(.2,.8,.3,1) both;
+    position:relative;
+    overflow:hidden;
+  }
+  .card::after{
+    content:"";
+    position:absolute;inset:0 0 auto 0;height:3px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    opacity:0;transition:opacity .25s;
+  }
+  .card:hover{
+    transform:translateY(-4px);
+    box-shadow:var(--shadow-lg);
+    border-color:var(--border-strong);
+  }
+  .card:hover::after{opacity:1;}
+
+  @keyframes pop{
+    from{opacity:0;transform:translateY(14px) scale(.985);}
+    to{opacity:1;transform:translateY(0) scale(1);}
+  }
+
+  .card-head{display:flex;align-items:flex-start;gap:11px;margin-bottom:8px;}
+  .card-title{
+    margin:0;
+    font-size:16.5px;
+    font-weight:800;
+    letter-spacing:-.35px;
+    line-height:1.3;
+    flex:1;
+    word-break:break-word;
+  }
+  .count-pill{
+    flex-shrink:0;
+    font-size:11.5px;font-weight:800;
+    padding:4px 10px;border-radius:999px;
+    background:var(--accent-soft);color:var(--accent);
+    letter-spacing:.2px;
+  }
+
+  .atc{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:11px;font-weight:700;
+    letter-spacing:.5px;
+    color:var(--muted);
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    padding:3px 9px;
+    border-radius:7px;
+    margin-bottom:9px;
+    font-variant-numeric:tabular-nums;
+  }
+  .atc::before{
+    content:"";width:5px;height:5px;border-radius:50%;
+    background:var(--accent-2);
+  }
+
+  .indication{
+    font-size:12.8px;
+    line-height:1.55;
+    color:var(--muted);
+    margin:0 0 12px;
+    padding:9px 11px;
+    background:var(--surface-2);
+    border-left:3px solid var(--accent);
+    border-radius:0 10px 10px 0;
+    display:-webkit-box;
+    -webkit-line-clamp:3;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+
+  .badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+  .badge{
+    font-size:10.5px;font-weight:800;
+    letter-spacing:.4px;text-transform:uppercase;
+    padding:4px 9px;border-radius:7px;
+    white-space:nowrap;
+  }
+  .badge.otc{background:var(--good-bg);color:var(--good);}
+  .badge.hosp{background:var(--warn-bg);color:var(--warn);}
+  .badge.moh{background:var(--purple-bg);color:var(--purple);}
+  .badge.local{background:var(--info-bg);color:var(--info);}
+  .badge.e{background:var(--good-bg);color:var(--good);}
+  .badge.v{background:var(--info-bg);color:var(--info);}
+
+  .forms{
+    list-style:none;margin:0;padding:0;
+    display:flex;flex-direction:column;gap:5px;
+  }
+  .form{
+    display:flex;align-items:center;gap:8px;
+    font-size:12.6px;
+    padding:7px 10px;
+    border-radius:10px;
+    background:var(--surface-2);
+    border:1px solid transparent;
+    transition:background .18s,border-color .18s;
+    flex-wrap:wrap;
+  }
+  .form:hover{background:var(--surface-3);border-color:var(--border);}
+  .form .strength{
+    font-weight:800;color:var(--text);
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+  .form .fname{color:var(--muted);font-weight:600;flex:1 1 auto;min-width:0;}
+  .form .route{
+    font-size:10.5px;font-weight:800;
+    letter-spacing:.35px;text-transform:uppercase;
+    color:var(--accent);
+    background:var(--accent-soft);
+    padding:2.5px 7px;border-radius:6px;
+    white-space:nowrap;
+  }
+  .form .mini{
+    font-size:9.5px;font-weight:900;
+    width:16px;height:16px;border-radius:5px;
+    display:grid;place-items:center;
+    flex-shrink:0;
+  }
+  .form .mini.e{background:var(--good-bg);color:var(--good);}
+  .form .mini.v{background:var(--info-bg);color:var(--info);}
+
+  .more-btn{
+    margin-top:9px;
+    font-family:inherit;
+    font-size:12.2px;font-weight:800;
+    color:var(--accent);
+    background:var(--accent-soft);
+    border:none;
+    border-radius:10px;
+    padding:9px 12px;
+    cursor:pointer;
+    transition:filter .18s, transform .15s;
+    letter-spacing:.1px;
+  }
+  .more-btn:hover{filter:brightness(.94);}
+  .more-btn:active{transform:scale(.985);}
+
+  /* ============ EMPTY ============ */
+  .empty{
+    grid-column:1/-1;
+    text-align:center;
+    padding:80px 20px;
+    color:var(--muted);
+    animation:pop .3s ease both;
+  }
+  .empty .emoji{font-size:52px;margin-bottom:14px;display:block;opacity:.75;}
+  .empty h3{margin:0 0 6px;font-size:17px;color:var(--text);font-weight:800;}
+  .empty p{margin:0;font-size:13.5px;}
+
+  mark{
+    background:linear-gradient(180deg,transparent 55%, rgba(250,204,21,.65) 55%);
+    color:inherit;
+    padding:0 1px;
+    border-radius:2px;
+    font-weight:800;
+  }
+  [data-theme="dark"] mark{
+    background:linear-gradient(180deg,transparent 55%, rgba(250,204,21,.35) 55%);
+  }
+
+  /* ============ SCROLLBAR ============ */
+  ::-webkit-scrollbar{width:11px;height:11px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px;border:3px solid var(--bg);}
+  ::-webkit-scrollbar-thumb:hover{background:var(--muted);}
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width:900px){
+    .header-inner{padding:12px 16px;gap:12px;}
+    .filters-inner{padding:10px 16px;}
+    .grid{padding:12px 16px 60px;gap:14px;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));}
+    .stats{padding:14px 16px 2px;}
+  }
+  @media (max-width:560px){
+    .brand h1{font-size:16.5px;}
+    .brand p{display:none;}
+    .logo{width:40px;height:40px;border-radius:12px;font-size:20px;}
+    .icon-btn{width:42px;height:42px;border-radius:12px;}
+    .grid{grid-template-columns:1fr;padding:12px 12px 60px;}
+    .filters-inner{padding:10px 12px;gap:8px;}
+    .filters select{flex:1 1 140px;max-width:none;}
+    .toggle{flex:1 1 auto;justify-content:center;}
+    .stats{padding:12px 12px 0;font-size:12.5px;}
+    .card{padding:15px 14px 12px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;}
+  }
+</style>
+</head>
+<body>
+
+<header class="header" id="siteHeader">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="logo">℞</div>
+      <div>
+        <h1>Drug Formulary</h1>
+        <p>Search &amp; filter the national drug list</p>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input id="search" type="search" autocomplete="off" placeholder="Search drug name, ATC code, ingredient, indication…" />
+      <button id="clearSearch" type="button" aria-label="Clear search">×</button>
+    </div>
+
+    <button class="icon-btn" id="themeBtn" type="button" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+  </div>
+</header>
+
+<nav class="filters">
+  <div class="filters-inner">
+    <select id="fAccess" aria-label="Filter by access level"><option value="">All access levels</option></select>
+    <select id="fRoute" aria-label="Filter by route"><option value="">All routes</option></select>
+    <select id="fForm" aria-label="Filter by dosage form"><option value="">All dosage forms</option></select>
+    <button class="toggle" id="fEssential" type="button"><span class="pip"></span>Essential</button>
+    <button class="toggle vital" id="fVital" type="button"><span class="pip"></span>Vital</button>
+    <div class="spacer"></div>
+    <button id="resetBtn" type="button">Reset filters</button>
+  </div>
+</nav>
+
+<div class="stats" id="stats"></div>
+
+<main class="grid" id="grid"></main>
+
+<script>
+/* =========================================================================
+   DATA
+   Format per drug:
+     [ name, ATC, clinicalIndication, [ forms... ] ]
+   Format per form:
+     [ dosageForm, strength, route, flags, access, note/ingredient ]
+       flags  : "E" = Essential, "V" = Vital, "EV" = both
+       access : "OTC" | "H" (hospital only) | "MOH" (health dept. only) | "L" (local production)
+   ========================================================================= */
+const RAW = [
+["A.C.A","N02BE51","",[["Tablet","","Oral","","OTC","Acetaminophen 250 mg + Caffeine 65 mg + ASA 250 mg"]]],
+["Abacavir","J05AF06","Treatment of AIDS related complex.",[["Tablet","300 mg","Oral","E","MOH"],["Solution","20 mg/ml","Oral","E","MOH"]]],
+["Abemaciclib","L01EF03","HR-positive / HER2-negative advanced or metastatic breast cancer",[["Tablet","50 mg","Oral"],["Tablet","100 mg","Oral"],["Tablet","150 mg","Oral"],["Tablet","200 mg","Oral"]]],
+["Abiraterone","L02BX03","Metastatic castration-resistant prostate cancer",[["Tablet","250 mg","Oral","E","","Abiraterone acetate"],["Tablet","500 mg","Oral","","","Abiraterone acetate"]]],
+["Acarbose","A10BF01","",[["Tablet","50 mg","Oral"],["Tablet","100 mg","Oral"]]],
+["Acetaminophen","N02BE01","",[
+  ["Injection, Solution","10 mg/ml","Intravenous","E","H"],
+  ["Injection, Solution, Concentrate","150 mg/ml","Intravenous Drip","","H"],
+  ["Tablet","325 mg","Oral","E","OTC"],
+  ["Tablet","500 mg","Oral","EV","OTC"],
+  ["Tablet, Dispersible","80 mg","Oral","","OTC"],
+  ["Tablet, Dispersible","160 mg","Oral","","OTC"],
+  ["Tablet, Effervescent","500 mg","Oral","","OTC"],
+  ["Tablet, Extended Release","650 mg","Oral","","OTC"],
+  ["Tablet, Orally Disintegrating","125 mg","Oral","","OTC"],
+  ["Tablet, Orally Disintegrating","250 mg","Oral","","OTC"],
+  ["Tablet, Orally Disintegrating","500 mg","Oral","","OTC"],
+  ["Capsule, Liquid Filled","325 mg","Oral","","OTC"],
+  ["Capsule, Liquid Filled","500 mg","Oral","","OTC"],
+  ["Suspension","100 mg/ml","Oral","EV","OTC"],
+  ["Suspension","120 mg/5 ml","Oral","E","OTC"],
+  ["Suspension","160 mg/5 ml","Oral","","OTC"],
+  ["Solution","100 mg/ml","Oral","","OTC"],
+  ["Solution","120 mg/5 ml","Oral","EV","OTC"],
+  ["Suppository","75 mg","Rectal","","OTC"],
+  ["Suppository","125 mg","Rectal","EV","OTC"],
+  ["Suppository","325 mg","Rectal","E","OTC"],
+  ["Powder","160 mg","Oral","","OTC","Sachet"]
+]],
+["Acetazolamide","S01EC01","",[["Tablet","250 mg","Oral","E"],["Injection, Powder","500 mg","Parenteral","E","H"]]],
+["Acetylcysteine","R05CB01","Mucolytic",[
+  ["Injection, Solution","200 mg/ml","Parenteral","EV","H"],
+  ["Injection, Solution","100 mg/ml","Parenteral","E","H"],
+  ["Tablet","200 mg","Oral","E"],
+  ["Tablet","600 mg","Oral","E"],
+  ["Tablet, Effervescent","600 mg","Oral","EV"],
+  ["Solution","100 mg/ml","Respiratory","","H","Nebulisation"],
+  ["Powder","200 mg","Oral","","","Sachet"],
+  ["Powder","600 mg","Oral","","","Sachet"]
+]],
+["Aciclovir","J05AB01","",[
+  ["Tablet","200 mg","Oral","E"],
+  ["Tablet","400 mg","Oral","EV"],
+  ["Tablet","800 mg","Oral","E"],
+  ["Suspension","200 mg/5 ml","Oral"],
+  ["Cream","5%","Topical","E"],
+  ["Ointment","3%","Ophthalmic","EV"],
+  ["Injection, Powder, Lyophilized","250 mg","Parenteral","EV","H"]
+]],
+["Adalimumab","L04AB04","",[["Injection, Solution","40 mg/0.8 ml","Parenteral","E"],["Injection, Solution","40 mg/0.4 ml","Parenteral","E"]]],
+["Adapalene","D10AD03","",[["Cream","0.1%","Topical"],["Gel","0.1%","Topical","","OTC"],["Gel","0.3%","Topical"],["Lotion","0.1%","Topical"],["Solution","0.1%","Topical"]]],
+["Albendazole","P02CA03","Treatment of hydatid disease (cystic echinococcosis, alveolar echinococcosis).",[
+  ["Tablet, Chewable","200 mg","Oral","E"],
+  ["Tablet, Chewable","400 mg","Oral","EV"],
+  ["Tablet","200 mg","Oral"],["Tablet","400 mg","Oral"],
+  ["Suspension","200 mg/5 ml","Oral","E"]
+]],
+["Alendronate","M05BA04","",[
+  ["Tablet","10 mg","Oral"],
+  ["Tablet","35 mg","Oral","","","As sodium"],
+  ["Tablet","70 mg","Oral","E","","As sodium"],
+  ["Effervescent Tablet","70 mg","Oral","","","As sodium"],
+  ["Solution","70 mg/75 ml","Oral","","","As sodium"]
+]],
+["Allopurinol","M04AA01","",[["Tablet","100 mg","Oral","E"],["Tablet","300 mg","Oral","E"]]],
+["Alprazolam","N05BA12","",[
+  ["Tablet","0.5 mg","Oral","E"],["Tablet","1 mg","Oral"],
+  ["Tablet, Extended Release","0.5 mg","Oral"],["Tablet, Extended Release","1 mg","Oral"],["Tablet, Extended Release","2 mg","Oral"],
+  ["Tablet, Orally Disintegrating","0.25 mg","Oral"],["Tablet, Orally Disintegrating","0.5 mg","Oral"],
+  ["Tablet, Orally Disintegrating","1 mg","Oral"],["Tablet, Orally Disintegrating","2 mg","Oral"]
+]],
+["Amiodarone","C01BD01","Acute treatment and prophylaxis of life-threatening ventricular tachycardia or fibrillation.",[
+  ["Tablet","200 mg","Oral","EV"],
+  ["Injection, Solution","50 mg/ml","Parenteral","EV","H"],
+  ["Injection, Solution","150 mg/100 ml","Parenteral","","H"]
+]],
+["Amitriptyline","N06AA09","",[["Tablet","10 mg","Oral","E"],["Tablet","25 mg","Oral","E"],["Tablet","50 mg","Oral"],["Tablet","100 mg","Oral","E"]]],
+["Amlodipine","C08CA01","",[["Tablet","2.5 mg","Oral"],["Tablet","5 mg","Oral","E"],["Tablet","10 mg","Oral"],["Solution","5 mg/5 ml","Oral"],["Solution","10 mg/5 ml","Oral"]]],
+["Amoxicillin","J01CA04","",[
+  ["Capsule","250 mg","Oral","E"],["Capsule","500 mg","Oral","EV"],
+  ["Tablet","500 mg","Oral"],["Tablet","875 mg","Oral"],["Tablet","1000 mg","Oral","E"],
+  ["Tablet, Dispersible","125 mg","Oral"],["Tablet, Dispersible","250 mg","Oral"],
+  ["Tablet, Chewable","250 mg","Oral"],
+  ["Tablet, Extended Release","775 mg","Oral"],
+  ["Powder, For Suspension","125 mg/5 ml","Oral","E"],
+  ["Powder, For Suspension","250 mg/5 ml","Oral","E"],
+  ["Powder, For Suspension","400 mg/5 ml","Oral"],
+  ["Powder, For Suspension","500 mg/5 ml","Oral"]
+]],
+["Amoxicillin + Clavulanic acid","J01CR02","",[
+  ["Tablet","500 mg + 125 mg","Oral","EV"],["Tablet","875 mg + 125 mg","Oral"],
+  ["Tablet, Dispersible","500 mg + 125 mg","Oral","EV"],
+  ["Tablet, Extended Release","1000 mg + 62.5 mg","Oral"],
+  ["Powder, For Suspension","125 mg + 31.25 mg /5 ml","Oral"],
+  ["Powder, For Suspension","250 mg + 62.5 mg /5 ml","Oral"],
+  ["Powder, For Suspension","400 mg + 57 mg /5 ml","Oral","V"],
+  ["Powder, For Suspension","600 mg + 42.9 mg /5 ml","Oral","EV"],
+  ["Injection, Powder","1000 mg + 200 mg","Parenteral","E","H"],
+  ["Injection, Powder","500 mg + 100 mg","Parenteral","","H"]
+]],
+["Ampicillin","J01CA01","",[
+  ["Capsule","250 mg","Oral","E"],["Capsule","500 mg","Oral","E"],
+  ["Powder, For Suspension","125 mg/5 ml","Oral","E"],["Powder, For Suspension","250 mg/5 ml","Oral","E"],
+  ["Injection, Powder","250 mg","Parenteral","E"],["Injection, Powder","500 mg","Parenteral","E"],["Injection, Powder","1 g","Parenteral","EV"]
+]],
+["Apixaban","B01AF02","Antithrombotic",[["Tablet","2.5 mg","Oral"],["Tablet","5 mg","Oral","V"]]],
+["Aripiprazole","N05AX12","",[
+  ["Tablet","5 mg","Oral"],["Tablet","10 mg","Oral"],["Tablet","15 mg","Oral"],
+  ["Tablet, Orally Disintegrating","10 mg","Oral"],["Tablet, Orally Disintegrating","15 mg","Oral"],
+  ["Solution","1 mg/ml","Oral"],
+  ["Injection, Powder, For Suspension, Extended Release","300 mg","Parenteral"],
+  ["Injection, Powder, For Suspension, Extended Release","400 mg","Parenteral"]
+]],
+["ASA (Acetylsalicylic Acid)","N02BA01 / B01AC06","",[
+  ["Tablet","100 mg","Oral","EV","OTC"],["Tablet","325 mg","Oral","E","OTC"],["Tablet","500 mg","Oral","","OTC"],
+  ["Tablet, Chewable","100 mg","Oral","E"],
+  ["Tablet, Effervescent","325 mg","Oral","","OTC"],
+  ["Tablet, Delayed Release","80 mg","Oral","E","OTC"],
+  ["Tablet, Delayed Release","81 mg","Oral","","OTC"],
+  ["Tablet, Delayed Release","325 mg","Oral","","OTC"],
+  ["Tablet, Orally Disintegrating","300 mg","Oral","","OTC"],
+  ["Suppository","325 mg","Rectal","","OTC"]
+]],
+["Atorvastatin","C10AA05","",[["Tablet","10 mg","Oral","E"],["Tablet","20 mg","Oral","E"],["Tablet","40 mg","Oral","E"],["Tablet","80 mg","Oral"]]],
+["Azithromycin","J01FA10","",[
+  ["Capsule","250 mg","Oral","E"],["Capsule","500 mg","Oral","E"],
+  ["Tablet","250 mg","Oral","E"],["Tablet","500 mg","Oral","EV"],["Tablet","600 mg","Oral"],
+  ["Powder, For Suspension","100 mg/5 ml","Oral"],
+  ["Powder, For Suspension","200 mg/5 ml","Oral","EV"],
+  ["Powder, For Suspension","1 g","Oral"],
+  ["Solution / Drops","1%","Ophthalmic"],["Solution / Drops","1.5%","Ophthalmic"],
+  ["Injection, Powder","500 mg","Parenteral","E","H"]
+]],
+["Baclofen","M03BX01","",[["Tablet","10 mg","Oral","E"],["Tablet","25 mg","Oral"]]],
+["Beclomethasone","R03BA01","",[
+  ["Aerosol","100 mcg/dose","Inhalation","E"],["Aerosol","250 mcg/dose","Inhalation","E"],
+  ["Inhaler","50 mcg/dose","Inhalation","E"],["Inhaler","50 mcg/dose","Nasal","E"],
+  ["Nebulisation","0.8 mg/2 ml","Inhalation","E"]
+]],
+["Bisoprolol","C07AB07","Hypertension, Angina",[["Tablet","2.5 mg","Oral"],["Tablet","5 mg","Oral"],["Tablet","10 mg","Oral"]]],
+["Budesonide","R03BA02","Crohn's disease (oral forms)",[
+  ["Inhaler","100 mcg/dose","Inhalation","V"],["Inhaler","200 mcg/dose","Inhalation","E"],["Inhaler","400 mcg/dose","Inhalation","E"],
+  ["Inhaler","64 mcg/dose","Nasal","EV"],["Inhaler","100 mcg/dose","Nasal"],
+  ["Nebulisation","0.5 mg/2 ml","Inhalation","E"],["Nebulisation","1 mg/2 ml","Inhalation"],
+  ["Capsule, Delayed Release","3 mg","Oral"],["Capsule, Delayed Release","9 mg","Oral","E"],
+  ["Tablet, Extended Release","9 mg","Oral"]
+]],
+["Bupivacaine","N01BB01","",[
+  ["Injection, Solution","0.25%","Parenteral","E","H"],
+  ["Injection, Solution","0.5%","Parenteral","V","H"],
+  ["Injection, Solution","0.5% / 4 ml","Intraspinal","EV","H"]
+]],
+["Caffeine","N06BC01","",[["Injection, Solution","10 mg/ml","Parenteral","EV","H","Caffeine citrate"],["Solution","10 mg/ml","Oral","","","Caffeine citrate"]]],
+["Captopril","C09AA01","",[["Tablet","12.5 mg","Oral"],["Tablet","25 mg","Oral","EV"],["Tablet","50 mg","Oral"],["Oral Solution","1 mg/ml","Oral"],["Oral Solution","5 mg/ml","Oral"]]],
+["Carbamazepine","N03AF01","",[
+  ["Tablet","200 mg","Oral","E"],
+  ["Tablet, Extended Release","200 mg","Oral","E"],["Tablet, Extended Release","400 mg","Oral","E"],
+  ["Suspension","100 mg/5 ml","Oral","E"],["Syrup","100 mg/5 ml","Oral"]
+]],
+["Carvedilol","C07AG02","",[
+  ["Tablet","3.125 mg","Oral"],["Tablet","6.25 mg","Oral"],["Tablet","12.5 mg","Oral"],["Tablet","25 mg","Oral"],
+  ["Capsule, Extended Release","10 mg","Oral"],["Capsule, Extended Release","20 mg","Oral"],["Capsule, Extended Release","40 mg","Oral"]
+]],
+["Cefalexin","J01DB01","",[
+  ["Capsule","250 mg","Oral","E"],["Capsule","500 mg","Oral","EV"],
+  ["Tablet","250 mg","Oral"],["Tablet","500 mg","Oral"],
+  ["Powder, For Suspension","125 mg/5 ml","Oral","E"],
+  ["Powder, For Suspension","250 mg/5 ml","Oral","EV"],
+  ["Powder, For Suspension","125 mg","Oral","","","Sachet"],
+  ["Powder, For Suspension","250 mg","Oral","","","Sachet"]
+]],
+["Ceftriaxone","J01DD04","",[
+  ["Injection, Powder","250 mg","Parenteral","E","H"],
+  ["Injection, Powder","500 mg","Parenteral","E","H"],
+  ["Injection, Powder","1 g","Parenteral","EV","H"],
+  ["Injection, Powder","2 g","Parenteral","E","H"]
+]],
+["Celecoxib","M01AH01","",[["Capsule","100 mg","Oral","EV"],["Capsule","200 mg","Oral"],["Capsule","400 mg","Oral"]]],
+["Cetirizine","R06AE07","",[
+  ["Tablet","5 mg","Oral","","OTC"],["Tablet","10 mg","Oral","","OTC"],
+  ["Capsule, Liquid Filled","10 mg","Oral","","OTC"],
+  ["Syrup","5 mg/5 ml","Oral","","OTC"]
+]],
+["Ciprofloxacin","J01MA02","",[
+  ["Tablet","250 mg","Oral","E"],["Tablet","500 mg","Oral","EV"],["Tablet","750 mg","Oral"],
+  ["Tablet, Extended Release","500 mg","Oral","V"],["Tablet, Extended Release","1000 mg","Oral"],
+  ["Suspension","250 mg/5 ml","Oral"],
+  ["Injection, Solution","2 mg/ml","Intravenous Drip","E","H"],
+  ["Injection, Solution","10 mg/ml","Intravenous","EV"],
+  ["Solution / Drops","0.3%","Ophthalmic","EV"],["Ointment","0.3%","Ophthalmic","E"]
+]],
+["Citalopram","N06AB04","",[["Tablet","20 mg","Oral","E"],["Tablet","40 mg","Oral"],["Solution / Drops","40 mg/ml","Oral"]]],
+["Clarithromycin","J01FA09","",[
+  ["Tablet","250 mg","Oral"],["Tablet","500 mg","Oral"],["Tablet, Extended Release","500 mg","Oral"],
+  ["Powder, For Suspension","125 mg/5 ml","Oral"],["Powder, For Suspension","250 mg/5 ml","Oral"],
+  ["Granule, For Suspension","250 mg","Oral","","","Sachet"]
+]],
+["Clindamycin","J01FF01","Treatment of Pneumocystis carinii pneumonia in AIDS patients.",[
+  ["Capsule","150 mg","Oral"],["Capsule","300 mg","Oral","E"],
+  ["Suspension","75 mg/5 ml","Oral","E"],
+  ["Injection, Solution","150 mg/ml","Parenteral","EV","H"],
+  ["Gel","1%","Topical","E"],["Solution","10 mg/ml","Topical","E"],["Swab","1%","Topical"],
+  ["Cream","2%","Vaginal","E"],["Suppository","100 mg","Vaginal","E"]
+]],
+["Clopidogrel","B01AC04","",[["Tablet","75 mg","Oral","EV"],["Tablet","300 mg","Oral","","H"]]],
+["Clotrimazole","D01AC01 / G01AF02","",[
+  ["Cream","1%","Topical"],["Solution","1%","Topical","E"],
+  ["Cream","1%","Vaginal","E","OTC"],["Cream","2%","Vaginal","E","OTC"],
+  ["Tablet","100 mg","Vaginal","E","OTC"],["Tablet","500 mg","Vaginal","E"],
+  ["Suppository","100 mg","Vaginal","E","OTC"],["Suppository","200 mg","Vaginal","","OTC"],["Suppository","500 mg","Vaginal"],
+  ["Capsule, Liquid Filled","500 mg","Vaginal"]
+]],
+["Clozapine","N05AH02","",[["Tablet","25 mg","Oral","E"],["Tablet","100 mg","Oral","E"]]],
+["Colchicine","M04AC01","Familial Mediterranean fever; Behçet's syndrome.",[["Tablet","0.6 mg","Oral"],["Tablet","1 mg","Oral","E"]]],
+["Co-trimoxazole","J01EE01","",[
+  ["Tablet","100 mg + 20 mg","Oral"],
+  ["Tablet","400 mg + 80 mg","Oral","EV"],
+  ["Tablet","800 mg + 160 mg","Oral","E"],
+  ["Suspension","200 mg + 40 mg /5 ml","Oral","E"],
+  ["Injection, Solution","400 mg + 80 mg /5 ml","Intravenous Drip","EV","H"]
+]],
+["Dexamethasone","H02AB02","",[
+  ["Tablet","0.5 mg","Oral","V"],["Tablet","4 mg","Oral","E"],["Tablet","40 mg","Oral","E"],
+  ["Elixir","0.5 mg/5 ml","Oral"],["Solution","2 mg/5 ml","Oral"],
+  ["Injection, Solution","4 mg/ml","Parenteral","EV"],
+  ["Solution / Drops","0.1%","Ophthalmic & Otic"]
+]],
+["Diazepam","N05BA01","Management of refractory epilepsy (intermittent use).",[
+  ["Tablet","2 mg","Oral","E"],["Tablet","5 mg","Oral"],["Tablet","10 mg","Oral","E"],
+  ["Solution","2 mg/5 ml","Oral","E"],
+  ["Injection, Solution","5 mg/ml","Parenteral","EV"],
+  ["Enema","5 mg","Rectal","E"],["Enema","10 mg","Rectal","EV"],
+  ["Suppository","5 mg","Rectal","E"],["Suppository","10 mg","Rectal","E"]
+]],
+["Diclofenac","M01AB05 / M02AA15","Analgesic / anti-inflammatory",[
+  ["Tablet, Delayed Release","25 mg","Oral"],["Tablet, Delayed Release","50 mg","Oral"],
+  ["Tablet, Extended Release","75 mg","Oral"],["Tablet, Extended Release","100 mg","Oral","E"],
+  ["Tablet, Extended Release","150 mg","Oral"],
+  ["Tablet","50 mg","Oral","","","Potassium salt"],
+  ["Capsule, Liquid Filled","25 mg","Oral","","","Potassium salt"],
+  ["Suppository","50 mg","Rectal"],["Suppository","100 mg","Rectal","EV"],
+  ["Injection, Solution","25 mg/ml","Parenteral","E","H"],
+  ["Gel","1%","Topical","E","OTC"],["Gel","3%","Topical"],
+  ["Solution","1.5%","Topical"],["Solution","2%","Topical"],
+  ["Patch","30 mg","Topical"],["Plaster","120 mg","Topical"]
+]],
+["Digoxin","C01AA05","",[
+  ["Tablet","0.25 mg","Oral","EV"],["Tablet","62.5 mcg","Oral"],["Tablet","125 mcg","Oral"],
+  ["Elixir","0.05 mg/ml","Oral","E"],["Solution / Drops","0.5 mg/ml","Oral"],
+  ["Injection, Solution","0.25 mg/ml","Parenteral","EV","H"]
+]],
+["Diltiazem","C08DB01","",[
+  ["Tablet","30 mg","Oral"],["Tablet","60 mg","Oral"],["Tablet","90 mg","Oral"],
+  ["Tablet, Extended Release","120 mg","Oral"],
+  ["Capsule, Extended Release","120 mg","Oral"],["Capsule, Extended Release","200 mg","Oral"],["Capsule, Extended Release","300 mg","Oral"],
+  ["Injection, Solution","5 mg/ml","Parenteral","","H"]
+]],
+["Domperidone","A03FA03","",[["Tablet","10 mg","Oral"],["Suspension","1 mg/ml","Oral"],["Powder, For Suspension","1 mg/ml","Oral"]]],
+["Donepezil","N06DA02","",[
+  ["Tablet","5 mg","Oral"],["Tablet","10 mg","Oral"],
+  ["Tablet, Orally Disintegrating","5 mg","Oral"],["Tablet, Orally Disintegrating","10 mg","Oral"]
+]],
+["Doxycycline","J01AA02","",[
+  ["Capsule","50 mg","Oral"],["Capsule","100 mg","Oral","EV"],
+  ["Capsule, Delayed Release","100 mg","Oral"],
+  ["Tablet","100 mg","Oral"],
+  ["Injection, Powder","100 mg","Parenteral","","H"]
+]],
+["Duloxetine","N06AX21","",[["Capsule, Delayed Release","20 mg","Oral"],["Capsule, Delayed Release","30 mg","Oral"],["Capsule, Delayed Release","60 mg","Oral"]]],
+["Enalapril","C09AA02","",[["Tablet","2.5 mg","Oral"],["Tablet","5 mg","Oral","E"],["Tablet","10 mg","Oral","E"],["Tablet","20 mg","Oral","E"]]],
+["Enoxaparin","B01AB05","",[["Injection, Solution","100 mg/ml","Parenteral","EV","H"]]],
+["Erythromycin","J01FA01","",[
+  ["Tablet","200 mg","Oral","E","","Ethylsuccinate"],["Tablet","400 mg","Oral","E","","Ethylsuccinate"],
+  ["Tablet, Chewable","200 mg","Oral","","","Ethylsuccinate"],
+  ["Powder, For Suspension","200 mg/5 ml","Oral","E","","Ethylsuccinate"],
+  ["Gel","2%","Topical","E"],["Gel","4%","Topical","E"],
+  ["Solution","2%","Topical","E"],["Solution","4%","Topical","E"],
+  ["Swab","2%","Topical","E"],
+  ["Ointment","0.5%","Ophthalmic","EV"],
+  ["Injection, Powder","1 g","Parenteral","","H","Lactobionate"]
+]],
+["Escitalopram","N06AB10","Antidepressant; anxiety disorder",[["Tablet","5 mg","Oral"],["Tablet","10 mg","Oral"],["Tablet","20 mg","Oral"]]],
+["Esomeprazole","A02BC05","",[
+  ["Capsule, Delayed Release","20 mg","Oral","","OTC"],["Capsule, Delayed Release","40 mg","Oral"],
+  ["Tablet, Delayed Release","20 mg","Oral","","OTC"],["Tablet, Delayed Release","40 mg","Oral"],
+  ["Granule, For Suspension, Delayed Release","2.5 mg","Oral"],["Granule, For Suspension, Delayed Release","5 mg","Oral"],
+  ["Granule, For Suspension, Delayed Release","10 mg","Oral"],
+  ["Injection, Powder","20 mg","Parenteral"],["Injection, Powder","40 mg","Parenteral"]
+]],
+["Famotidine","A02BA03","",[
+  ["Tablet","20 mg","Oral","E","OTC"],["Tablet","40 mg","Oral","E"],
+  ["Powder, For Suspension","40 mg/5 ml","Oral"],
+  ["Injection, Solution","10 mg/ml","Parenteral","V"],
+  ["Injection, Solution","20 mg/50 ml","Intravenous Drip"]
+]],
+["Fenofibrate","C10AB05","",[["Capsule","100 mg","Oral"],["Capsule","145 mg","Oral"],["Capsule","200 mg","Oral"],["Tablet","145 mg","Oral"]]],
+["Fentanyl","N01AH01 / N02AB03","",[
+  ["Injection, Solution","50 mcg/ml","Parenteral","","H","Citrate"],
+  ["Patch","25 mcg/h","Transdermal","E"],["Patch","50 mcg/h","Transdermal","E"],
+  ["Patch","75 mcg/h","Transdermal"],["Patch","100 mcg/h","Transdermal"],
+  ["Tablet","100 mcg","Sublingual"],["Tablet","200 mcg","Sublingual"]
+]],
+["Ferrous Sulfate","B03AA01","",[["Syrup","200 mg/5 ml","Oral","E","","40 mg elemental Fe²⁺/5 ml"]]],
+["Finasteride","G04CB01","",[["Tablet","1 mg","Oral"],["Tablet","5 mg","Oral"],["Gel","1%","Topical"]]],
+["Fluconazole","J02AC01","",[
+  ["Capsule","50 mg","Oral"],["Capsule","100 mg","Oral","EV"],["Capsule","150 mg","Oral","EV"],["Capsule","200 mg","Oral","E"],
+  ["Tablet","50 mg","Oral"],["Tablet","100 mg","Oral","E"],["Tablet","150 mg","Oral"],["Tablet","200 mg","Oral","E"],
+  ["Powder, For Suspension","10 mg/ml","Oral"],["Powder, For Suspension","200 mg/5 ml","Oral","E"],
+  ["Injection, Solution","2 mg/ml","Parenteral","E","H"]
+]],
+["Fluoxetine","N06AB03","",[
+  ["Capsule","10 mg","Oral","E"],["Capsule","20 mg","Oral","E"],["Capsule, Delayed Release","90 mg","Oral"],
+  ["Tablet","10 mg","Oral"],["Tablet","20 mg","Oral"],
+  ["Syrup","20 mg/5 ml","Oral","E"]
+]],
+["Fluticasone","R03BA05 / R01AD08","",[
+  ["Inhaler","50 mcg/dose","Inhalation"],["Inhaler","125 mcg/dose","Inhalation","V"],["Inhaler","250 mcg/dose","Inhalation"],
+  ["Inhaler","50 mcg/dose","Nasal"],["Inhaler","27.5 mcg/dose","Nasal","","OTC","Furoate"],
+  ["Powder, Inhalation","250 mcg/actuation","Inhalation"],
+  ["Nebulisation","0.5 mg/2 ml","Inhalation"],["Nebulisation","2 mg/2 ml","Inhalation"]
+]],
+["Folic Acid","B03BB01","",[["Tablet","1 mg","Oral","E"],["Tablet","5 mg","Oral","E"],["Injection","5 mg/ml","Parenteral","","H"]]],
+["Furosemide","C03CA01","",[
+  ["Tablet","20 mg","Oral"],["Tablet","40 mg","Oral","E"],["Solution","40 mg/5 ml","Oral"],
+  ["Injection, Solution","10 mg/ml","Intravenous Drip","EV","H"]
+]],
+["Gabapentin","N03AX12","Treatment of amyotrophic lateral sclerosis.",[
+  ["Capsule","100 mg","Oral","E"],["Capsule","300 mg","Oral","E"],["Capsule","400 mg","Oral","E"],["Capsule","800 mg","Oral"],
+  ["Tablet","600 mg","Oral"],["Tablet","800 mg","Oral"]
+]],
+["Gentamicin","J01GB03","",[
+  ["Injection, Solution","10 mg/ml","Parenteral","E"],
+  ["Injection, Solution","40 mg/ml","Parenteral","EV"],
+  ["Injection, Solution","0.8 mg/ml","Parenteral","E","H","In NaCl 0.9% premixed"],
+  ["Solution / Drops","3 mg/ml","Ophthalmic","E"],["Ointment","3 mg/g","Ophthalmic","E"]
+]],
+["Gliclazide","A10BB09","Type 2 Diabetes Mellitus",[["Tablet","80 mg","Oral","E"],["Tablet, Extended Release","30 mg","Oral","E"],["Tablet, Extended Release","60 mg","Oral","E"]]],
+["Glimepiride","A10BB12","Type 2 Diabetes Mellitus",[["Tablet","1 mg","Oral"],["Tablet","2 mg","Oral"],["Tablet","3 mg","Oral"],["Tablet","4 mg","Oral"]]],
+["Heparin","B01AB01","",[
+  ["Injection, Solution","1000 U/ml","Parenteral","E","H","Preservative free"],
+  ["Injection, Solution","5000 U/ml","Parenteral","EV","H"],
+  ["Injection, Solution","10000 U/ml","Parenteral","","H"]
+]],
+["Hydrochlorothiazide","C03AA03","Oedema, Hypertension",[["Tablet","12.5 mg","Oral"],["Tablet","25 mg","Oral","E"],["Tablet","50 mg","Oral"]]],
+["Hydrocortisone","H02AB09 / D07AA02","",[
+  ["Tablet","10 mg","Oral"],
+  ["Cream","1%","Topical","E"],["Ointment","1%","Topical","E"],["Cream","1%","Topical","","","Acetate"],
+  ["Ointment","1%","Ophthalmic"],
+  ["Injection, Powder","100 mg","Parenteral","E","","Sodium succinate"],
+  ["Injection, Solution","50 mg/ml","Parenteral","E","","Sodium phosphate"],
+  ["Enema","100 mg/60 ml","Rectal","E"]
+]],
+["Ibuprofen","M01AE01 / M02AA13","",[
+  ["Tablet","200 mg","Oral","","OTC"],["Tablet","400 mg","Oral","","OTC"],["Tablet","600 mg","Oral"],
+  ["Tablet, Effervescent","200 mg","Oral","","OTC"],["Tablet, Effervescent","400 mg","Oral","","OTC"],
+  ["Tablet, Extended Release","600 mg","Oral","","OTC"],["Tablet, Extended Release","800 mg","Oral"],
+  ["Tablet, Orally Disintegrating","200 mg","Oral","","OTC"],
+  ["Capsule, Liquid Filled","200 mg","Oral","E","OTC"],["Capsule, Liquid Filled","400 mg","Oral","EV","OTC"],
+  ["Suspension","100 mg/5 ml","Oral","EV","OTC"],["Suspension","40 mg/ml","Oral","","OTC"],
+  ["Suppository","60 mg","Rectal","","OTC"],["Suppository","75 mg","Rectal","","OTC"],["Suppository","150 mg","Rectal","","OTC"],
+  ["Granule, Effervescent","600 mg","Oral"],["Powder","100 mg","Oral","","","Sachet"],
+  ["Gel","5%","Topical","","OTC"],
+  ["Injection, Solution","100 mg/ml","Parenteral","E","H"],
+  ["Injection, Solution","5 mg/ml","Intravenous","E","H","For PDA diagnosis"]
+]],
+["Imatinib","L01XE01","GIST, Ph+ ALL, dermatofibrosarcoma protuberans, hypereosinophilic syndrome.",[
+  ["Tablet","100 mg","Oral","E"],["Tablet","400 mg","Oral","E"],
+  ["Capsule","50 mg","Oral"],["Capsule","100 mg","Oral","E","","Mesylate"],["Capsule","400 mg","Oral","E","","Mesylate"]
+]],
+["Imipenem + Cilastatin","J01DH51","",[
+  ["Injection, Powder","250 mg + 250 mg","Parenteral","V","H"],
+  ["Injection, Powder","500 mg + 500 mg","Parenteral","V","H"],
+  ["Injection, Powder","750 mg + 750 mg","Parenteral","","H"]
+]],
+["Insulin Glargine","A10AE01 / A10AE04","Diabetes Mellitus",[["Injection, Solution","100 IU/ml","Parenteral"],["Injection, Solution","300 IU/ml","Parenteral"]]],
+["Insulin (Regular)","A10AB01","",[["Injection, Solution","100 IU/ml","Parenteral","EV"]]],
+["Irbesartan","C09CA04","",[["Tablet","150 mg","Oral"],["Tablet","300 mg","Oral"]]],
+["Isoniazid","J04AC01","",[["Tablet","100 mg","Oral","E"],["Tablet","300 mg","Oral","E"],["Injection, Solution","100 mg/ml","Parenteral","E","H"]]],
+["Isosorbide Dinitrate","C01DA08","",[
+  ["Tablet","5 mg","Sublingual"],["Tablet","10 mg","Oral","E"],
+  ["Tablet, Extended Release","40 mg","Oral","E"],
+  ["Spray","1.25 mg/dose","Topical"]
+]],
+["Itraconazole","J02AC02","",[["Capsule","100 mg","Oral"],["Solution","10 mg/ml","Oral"]]],
+["Ivabradine","C01EB17","Chronic heart failure, Angina pectoris",[["Tablet","5 mg","Oral"],["Tablet","7.5 mg","Oral"]]],
+["Ketoconazole","D01AC08 / J02AB02","",[
+  ["Cream","2%","Topical"],["Lotion","2%","Topical","E"],["Shampoo","2%","Topical","E"],["Tablet","200 mg","Oral"]
+]],
+["Ketorolac","M01AB15 / S01BC05","",[
+  ["Tablet","10 mg","Oral"],
+  ["Injection, Solution","15 mg/ml","Parenteral","E"],
+  ["Injection, Solution","30 mg/ml","Parenteral","V","H"],
+  ["Solution / Drops","0.5%","Ophthalmic","E"],["Solution / Drops","0.45%","Ophthalmic"]
+]],
+["Lactulose","A06AD11","",[["Syrup","10 g/15 ml","Oral","E"],["Powder, For Solution","10 g","Oral"]]],
+["Lamotrigine","N03AX09","",[
+  ["Tablet","25 mg","Oral","E"],["Tablet","50 mg","Oral","E"],["Tablet","100 mg","Oral","E"],
+  ["Tablet, Extended Release","25 mg","Oral"],["Tablet, Extended Release","50 mg","Oral"],
+  ["Tablet, Extended Release","100 mg","Oral"],["Tablet, Extended Release","200 mg","Oral"],
+  ["Solution","10 mg/ml","Oral"]
+]],
+["Lansoprazole","A02BC03","",[["Capsule, Delayed Release","15 mg","Oral","","OTC"],["Capsule, Delayed Release","30 mg","Oral"]]],
+["Latanoprost","S01EE01","",[["Solution / Drops","50 mcg/ml","Ophthalmic","E"]]],
+["Levetiracetam","N03AX14","",[
+  ["Tablet","250 mg","Oral"],["Tablet","500 mg","Oral"],["Tablet","750 mg","Oral"],["Tablet","1000 mg","Oral"],
+  ["Tablet, Extended Release","500 mg","Oral"],["Tablet, Extended Release","750 mg","Oral"],
+  ["Tablet, Extended Release","1000 mg","Oral"],["Tablet, Extended Release","1500 mg","Oral"],
+  ["Solution","100 mg/ml","Oral"],
+  ["Sachet","250 mg","Oral"],["Sachet","500 mg","Oral"],["Sachet","1000 mg","Oral"],
+  ["Injection, Solution, Concentrate","100 mg/ml","Parenteral","","H"],
+  ["Injection, Solution","500 mg/100 ml","Parenteral","","H"],["Injection, Solution","1500 mg/100 ml","Parenteral","","H"]
+]],
+["Levofloxacin","J01MA12","",[
+  ["Tablet","250 mg","Oral","E"],["Tablet","500 mg","Oral","EV"],["Tablet","750 mg","Oral","EV"],
+  ["Solution","25 mg/ml","Oral"],
+  ["Injection, Solution","5 mg/ml","Intravenous Drip","EV","H"],
+  ["Injection, Solution, Concentrate","25 mg/ml","Parenteral","E","H"],
+  ["Solution / Drops","0.5%","Ophthalmic","E"],["Solution / Drops","1.5%","Ophthalmic"]
+]],
+["Levodopa + Carbidopa","N04BA02","",[
+  ["Tablet","100 mg + 10 mg","Oral","E"],["Tablet","100 mg + 25 mg","Oral","E"],["Tablet","250 mg + 25 mg","Oral"],
+  ["Tablet, Extended Release","100 mg + 25 mg","Oral"],["Tablet, Extended Release","200 mg + 50 mg","Oral","E"]
+]],
+["Levothyroxine","H03AA01","",[
+  ["Tablet","25 mcg","Oral"],["Tablet","50 mcg","Oral","E"],["Tablet","75 mcg","Oral"],
+  ["Tablet","100 mcg","Oral","E"],["Tablet","150 mcg","Oral"],
+  ["Capsule, Liquid Filled","50 mcg","Oral"],["Capsule, Liquid Filled","75 mcg","Oral"],
+  ["Capsule, Liquid Filled","100 mcg","Oral"],["Capsule, Liquid Filled","150 mcg","Oral"],
+  ["Solution","20 mcg/ml","Oral"]
+]],
+["Lidocaine","N01BB52 / C01BB01 / D04AB01","Lignocaine",[
+  ["Injection, Solution","1%","Parenteral","E","H"],["Injection, Solution","2%","Parenteral","V"],
+  ["Injection, Solution","4%","Parenteral","E","H"],
+  ["Injection, Solution","20%","Parenteral","","H"],
+  ["Injection, Solution","5% + Dextrose 7.5%","Intraspinal","E","H"],
+  ["Gel","2%","Topical","EV","OTC"],["Cream","4%","Topical","E","OTC"],
+  ["Solution","4%","Topical","E"],["Spray","6.5%","Topical","E"],["Spray","10 mg/dose","Topical"],
+  ["Patch","5%","Topical"]
+]],
+["Linezolid","J01XX08","",[
+  ["Tablet","400 mg","Oral","","H"],["Tablet","600 mg","Oral","EV","H"],
+  ["Powder, For Suspension","100 mg/5 ml","Oral","E"],
+  ["Injection, Solution","2 mg/ml","Parenteral","EV","H"]
+]],
+["Lisinopril","C09AA03","",[["Tablet","5 mg","Oral"],["Tablet","10 mg","Oral"],["Tablet","20 mg","Oral"]]],
+["Lithium Carbonate","N05AN01","",[
+  ["Tablet","300 mg","Oral","E"],["Tablet, Extended Release","400 mg","Oral"],["Tablet, Extended Release","450 mg","Oral"],
+  ["Capsule, Extended Release","400 mg","Oral"]
+]],
+["Loperamide","A07DA03","",[
+  ["Capsule","2 mg","Oral","","OTC"],["Tablet","2 mg","Oral","EV","OTC"],
+  ["Tablet, Orally Disintegrating","2 mg","Oral","","OTC"],
+  ["Solution","1 mg/5 ml","Oral","","OTC"]
+]],
+["Loratadine","R06AX13","",[
+  ["Tablet","10 mg","Oral","EV","OTC"],["Tablet, Orally Disintegrating","10 mg","Oral","","OTC"],
+  ["Capsule, Liquid Filled","10 mg","Oral","","OTC"],
+  ["Syrup","5 mg/5 ml","Oral","EV","OTC"]
+]],
+["Losartan","C09CA01","",[["Tablet","12.5 mg","Oral"],["Tablet","25 mg","Oral","E"],["Tablet","50 mg","Oral","E"],["Tablet","100 mg","Oral"]]],
+["Magnesium Sulfate","A12CC02","",[["Injection, Solution","10%","Parenteral","V"],["Injection, Solution","20%","Parenteral"],["Injection, Solution","50%","Parenteral","EV","H"]]],
+["Meropenem","J01DH02","Acute pulmonary exacerbations in cystic fibrosis.",[
+  ["Injection, Powder","500 mg","Parenteral","EV","H"],["Injection, Powder","1 g","Parenteral","EV","H"]
+]],
+["Metformin","A10BA02","Type 2 Diabetes Mellitus",[
+  ["Tablet","500 mg","Oral","E"],["Tablet","850 mg","Oral"],["Tablet","1000 mg","Oral","E"],
+  ["Tablet, Extended Release","500 mg","Oral","E"],["Tablet, Extended Release","750 mg","Oral","E"],
+  ["Tablet, Extended Release","1000 mg","Oral","E"],
+  ["Solution","500 mg/5 ml","Oral"]
+]],
+["Methadone","N07BC02","",[
+  ["Tablet","5 mg","Oral","V"],["Tablet","20 mg","Oral","V"],["Tablet","40 mg","Oral"],
+  ["Tablet, For Suspension","20 mg","Oral"],["Tablet, For Suspension","40 mg","Oral"],
+  ["Solution","5 mg/5 ml","Oral","E"],["Solution","25 mg/5 ml","Oral","V"],
+  ["Powder","1 g","Oral","","","Sachet"],
+  ["Injection, Solution","5 mg/ml","Parenteral","","H"],["Injection, Solution","10 mg/ml","Parenteral","","H"]
+]],
+["Methotrexate","L01BA01","",[
+  ["Tablet","2.5 mg","Oral","E"],["Tablet","5 mg","Oral"],
+  ["Injection, Solution","2.5 mg/ml","Parenteral","E"],
+  ["Injection, Solution","10 mg/ml","Parenteral"],
+  ["Injection, Solution","25 mg/ml","Parenteral"],
+  ["Injection, Solution","50 mg/ml","Parenteral"],
+  ["Injection, Solution","100 mg/ml","Parenteral"],
+  ["Injection, Powder, Lyophilized","1 g","Parenteral","E"],["Injection, Powder, Lyophilized","50 mg","Parenteral"]
+]],
+["Methylprednisolone","H02AB04","",[
+  ["Injection, Powder","40 mg","Parenteral"],["Injection, Powder","125 mg","Parenteral","","H"],
+  ["Injection, Powder","250 mg","Parenteral","","H"],["Injection, Powder","500 mg","Parenteral","E","H"],
+  ["Injection, Powder","1000 mg","Parenteral","","H"],
+  ["Injection, Solution","40 mg/ml","Parenteral","","","Acetate"]
+]],
+["Metoclopramide","A03FA01","",[
+  ["Tablet","10 mg","Oral","E"],["Capsule, Liquid Filled","10 mg","Oral"],
+  ["Solution / Drops","4 mg/ml","Oral","E"],["Solution","5 mg/5 ml","Oral"],
+  ["Injection, Solution","5 mg/ml","Parenteral","EV","H"]
+]],
+["Metoprolol","C07AB02","",[
+  ["Tablet","50 mg","Oral","E"],["Tablet","100 mg","Oral","","","Tartrate"],
+  ["Tablet, Extended Release","23.75 mg","Oral"],["Tablet, Extended Release","47.5 mg","Oral","E"],
+  ["Tablet, Extended Release","95 mg","Oral"],["Tablet, Extended Release","190 mg","Oral"],
+  ["Capsule, Extended Release","23.75 mg","Oral"],["Capsule, Extended Release","47.5 mg","Oral"],
+  ["Capsule, Extended Release","95 mg","Oral"],["Capsule, Extended Release","190 mg","Oral"],
+  ["Injection, Solution","1 mg/ml","Parenteral","E","H"]
+]],
+["Metronidazole","P01AB01 / J01XD01 / G01AF01","",[
+  ["Tablet","250 mg","Oral","EV"],["Tablet","500 mg","Oral","E"],
+  ["Suspension","125 mg/5 ml","Oral","EV"],
+  ["Injection, Solution","5 mg/ml","Intravenous Drip","EV","H"],
+  ["Gel","0.75%","Topical","E"],["Gel","0.75%","Vaginal","E"],
+  ["Tablet","500 mg","Vaginal","E"],["Suppository","500 mg","Vaginal","E"]
+]],
+["Mirtazapine","N06AX11","",[
+  ["Tablet","7.5 mg","Oral"],["Tablet","15 mg","Oral"],["Tablet","30 mg","Oral"],["Tablet","45 mg","Oral"],
+  ["Tablet, Orally Disintegrating","15 mg","Oral"],["Tablet, Orally Disintegrating","30 mg","Oral"],
+  ["Tablet, Orally Disintegrating","45 mg","Oral"]
+]],
+["Misoprostol","G02AD06","Intrauterine fetal death (2nd/3rd trimester).",[
+  ["Tablet","25 mcg","Oral","","H"],["Tablet","100 mcg","Oral","","H"],["Tablet","200 mcg","Oral","E","H"]
+]],
+["Montelukast","R03DC03","",[
+  ["Tablet","10 mg","Oral"],["Tablet, Chewable","5 mg","Oral","E"],["Granule","4 mg","Oral","","","Sachet"]
+]],
+["Morphine","N02AA01","",[
+  ["Tablet","10 mg","Oral","E"],["Suppository","10 mg","Rectal","V"],
+  ["Injection, Solution","10 mg/ml","Parenteral","EV","H"],["Injection, Solution","25 mg/ml","Parenteral","","H"],
+  ["Injection, Solution","50 mg/ml","Parenteral","","H"]
+]],
+["Naloxone","V03AB15","",[["Injection, Solution","0.4 mg/ml","Parenteral","EV","H"],["Injection, Solution","5 mg/0.5 ml","Parenteral","EV","H"]]],
+["Naproxen","M01AE02","",[
+  ["Tablet","250 mg","Oral","E"],["Tablet","375 mg","Oral"],
+  ["Tablet, Delayed Release","500 mg","Oral","EV"],
+  ["Tablet, Extended Release","750 mg","Oral"],
+  ["Capsule, Liquid Filled","200 mg","Oral","","OTC"],
+  ["Suspension","125 mg/5 ml","Oral"],
+  ["Suppository","500 mg","Rectal"]
+]],
+["Nifedipine","C08CA05","",[
+  ["Capsule, Liquid Filled","10 mg","Oral"],
+  ["Capsule, Extended Release","20 mg","Oral"],
+  ["Tablet","10 mg","Oral"],["Tablet","30 mg","Oral"],
+  ["Tablet, Extended Release","20 mg","Oral"],["Tablet, Extended Release","60 mg","Oral"]
+]],
+["Nitroglycerin","C01DA02","",[
+  ["Capsule, Liquid Filled","0.4 mg","Sublingual","EV"],
+  ["Spray","400 mcg/dose","Sublingual"],
+  ["Tablet, Extended Release","2.6 mg","Oral","E"],
+  ["Tablet, Extended Release","6.5 mg","Oral","E"],
+  ["Ointment","2%","Topical","E"],["Ointment","0.4%","Topical"],
+  ["Patch, Extended Release","5 mg/24h","Transdermal"],["Patch, Extended Release","10 mg/24h","Transdermal"],
+  ["Injection, Solution","1 mg/ml","Parenteral","E","H"],["Injection, Solution","5 mg/ml","Parenteral","E","H"]
+]],
+["Nystatin","A07AA02 / D01AA01","",[
+  ["Tablet","500,000 U","Oral"],["Tablet","100,000 U","Vaginal","E"],
+  ["Powder, For Suspension","100,000 U/ml","Local Oral","E"],
+  ["Ointment","100,000 U/g","Topical","E"]
+]],
+["Olanzapine","N05AH03","",[
+  ["Tablet","2.5 mg","Oral"],["Tablet","5 mg","Oral"],["Tablet","10 mg","Oral"],["Tablet","15 mg","Oral"],
+  ["Injection, Powder, For Solution","10 mg","Parenteral"]
+]],
+["Omeprazole","A02BC01","",[
+  ["Capsule, Delayed Release","20 mg","Oral","E","OTC"],
+  ["Capsule, Delayed Release Pellets","20 mg","Oral","E","OTC"],
+  ["Tablet, Delayed Release","20 mg","Oral","","OTC","As magnesium"],
+  ["Powder, For Suspension","20 mg","Oral","","","Sachet"],
+  ["Powder, For Suspension, Delayed Release","2.5 mg","Oral"],["Powder, For Suspension, Delayed Release","10 mg","Oral"],
+  ["Injection, Powder","40 mg","Parenteral","","","As sodium"]
+]],
+["Ondansetron","A04AA01","",[
+  ["Tablet","4 mg","Oral","EV"],["Tablet","8 mg","Oral"],
+  ["Tablet, Orally Disintegrating","4 mg","Oral"],["Tablet, Orally Disintegrating","8 mg","Oral"],
+  ["Solution","4 mg/5 ml","Oral","EV"],
+  ["Injection, Solution","2 mg/ml","Parenteral","EV"],
+  ["Suppository","16 mg","Rectal"]
+]],
+["Oseltamivir","J05AH02","",[
+  ["Capsule","30 mg","Oral","","MOH"],["Capsule","45 mg","Oral","","MOH"],["Capsule","75 mg","Oral","E","MOH"],
+  ["Powder, For Suspension","30 mg/5 ml","Oral","","MOH"],
+  ["Powder, For Suspension","60 mg/5 ml","Oral","E","MOH"]
+]],
+["Oxytocin","H01BB02","",[["Injection, Solution","5 U/ml","Parenteral","E","H"],["Injection, Solution","10 U/ml","Parenteral","EV","H"]]],
+["Pantoprazole","A02BC02","",[
+  ["Tablet, Delayed Release","20 mg","Oral","E"],["Tablet, Delayed Release","40 mg","Oral","E"],
+  ["Capsule, Delayed Release","20 mg","Oral"],["Capsule, Delayed Release","40 mg","Oral"],
+  ["Injection, Powder, Lyophilized","40 mg","Intravenous Drip","EV"]
+]],
+["Paroxetine","N06AB05","",[["Tablet","20 mg","Oral"],["Tablet","40 mg","Oral"],["Capsule","7.5 mg","Oral"]]],
+["Penicillin G","J01CE01 / J01CE08 / J01CE09","",[
+  ["Injection, Powder","1,000,000 U","Parenteral","EV","","Potassium"],
+  ["Injection, Powder","5,000,000 U","Parenteral","E","","Potassium"],
+  ["Injection, Powder","5,000,000 U","Parenteral","","","Sodium"],
+  ["Injection, Powder, Extended Release","600,000 U","Parenteral","E","","Benzathine"],
+  ["Injection, Powder, Extended Release","1,200,000 U","Parenteral","EV","","Benzathine"],
+  ["Injection, Powder","400,000 U","Parenteral","E","","Procaine"],
+  ["Injection, Powder","800,000 U","Parenteral","E","","Procaine"]
+]],
+["Phenobarbital","N03AA02","",[
+  ["Tablet","15 mg","Oral","EV"],["Tablet","60 mg","Oral","E"],["Tablet","100 mg","Oral","EV"],
+  ["Elixir","15 mg/5 ml","Oral"],
+  ["Injection, Solution","100 mg/ml","Parenteral","","H"],
+  ["Injection, Solution","200 mg/ml","Parenteral","EV","H"]
+]],
+["Phenytoin","N03AB02","",[
+  ["Capsule","50 mg","Oral"],["Capsule","100 mg","Oral","EV"],
+  ["Suspension","30 mg/5 ml","Oral","EV"],["Suspension","125 mg/5 ml","Oral"],
+  ["Injection, Solution","50 mg/ml","Parenteral","E","H"],
+  ["Cream","1%","Topical"]
+]],
+["Piperacillin + Tazobactam","J01CR05","",[
+  ["Injection, Powder","2 g + 250 mg","Parenteral","EV","H"],
+  ["Injection, Powder","3 g + 375 mg","Parenteral","EV","H"],
+  ["Injection, Powder","4 g + 500 mg","Parenteral","EV","H"]
+]],
+["Prednisolone","H02AB06","",[
+  ["Tablet","5 mg","Oral","EV"],["Tablet","20 mg","Oral"],["Tablet","50 mg","Oral","EV"],
+  ["Suspension / Drops","1%","Ophthalmic","E"],
+  ["Solution","15 mg/5 ml","Oral"],["Solution","25 mg/5 ml","Oral"]
+]],
+["Pregabalin","N03AX16","",[
+  ["Capsule","50 mg","Oral"],["Capsule","75 mg","Oral"],["Capsule","100 mg","Oral"],["Capsule","150 mg","Oral"],
+  ["Capsule","200 mg","Oral"],["Capsule","225 mg","Oral"],["Capsule","300 mg","Oral"],
+  ["Tablet, Extended Release","82.5 mg","Oral"],["Tablet, Extended Release","165 mg","Oral"],["Tablet, Extended Release","330 mg","Oral"]
+]],
+["Progesterone","G03DA04","",[
+  ["Capsule, Liquid Filled","100 mg","Oral / Vaginal"],["Capsule, Liquid Filled","200 mg","Oral / Vaginal"],
+  ["Tablet","100 mg","Vaginal"],
+  ["Suppository","100 mg","Vaginal / Rectal"],["Suppository","200 mg","Vaginal / Rectal"],["Suppository","400 mg","Vaginal / Rectal","E"],
+  ["Gel","8%","Vaginal"],
+  ["Injection, Solution","25 mg/ml","Parenteral","E"],["Injection, Solution","50 mg/ml","Parenteral"]
+]],
+["Propranolol","C07AA05","",[
+  ["Tablet","10 mg","Oral","E"],["Tablet","20 mg","Oral","E"],["Tablet","40 mg","Oral","E"],["Tablet","80 mg","Oral"],
+  ["Tablet, Extended Release","80 mg","Oral"],["Tablet, Extended Release","160 mg","Oral"],
+  ["Syrup","4.28 mg/ml","Oral"],
+  ["Injection, Solution","1 mg/ml","Parenteral","E","H"]
+]],
+["Risperidone","N05AX08","",[
+  ["Tablet","1 mg","Oral","E"],["Tablet","2 mg","Oral","E"],["Tablet","3 mg","Oral"],["Tablet","4 mg","Oral"],
+  ["Solution","1 mg/ml","Oral","E"],
+  ["Injection, Powder, Extended Release","25 mg","Parenteral"],["Injection, Powder, Extended Release","37.5 mg","Parenteral"],
+  ["Injection, Powder, Extended Release","50 mg","Parenteral"]
+]],
+["Rituximab","L01FA01","Non-Hodgkin B-cell lymphoma, CLL, immune thrombocytopenic purpura.",[
+  ["Injection, Solution","10 mg/ml","Parenteral","E"],["Injection, Solution","120 mg/ml","Parenteral"]
+]],
+["Rivaroxaban","B01AF01","Antithrombotic",[["Tablet","2.5 mg","Oral","E"],["Tablet","10 mg","Oral","E"],["Tablet","15 mg","Oral","E"],["Tablet","20 mg","Oral","E"]]],
+["Rosuvastatin","C10AA07","",[["Tablet","5 mg","Oral"],["Tablet","10 mg","Oral"],["Tablet","20 mg","Oral"],["Tablet","40 mg","Oral"]]],
+["Salbutamol","R03AC02 / R03CC02","",[
+  ["Inhaler","100 mcg/dose","Inhalation","E"],["Inhaler","100 mcg/actuation","Inhalation","V"],
+  ["Nebulisation","2.5 mg/2.5 ml","Inhalation"],["Solution","5 mg/ml","Inhalation"],
+  ["Tablet","2 mg","Oral"],["Syrup","2 mg/5 ml","Oral","E"],
+  ["Injection, Solution","0.5 mg/ml","Parenteral","","H"]
+]],
+["Salmeterol + Fluticasone","R03AK06","",[
+  ["Aerosol, Metered","25 mcg + 50 mcg","Inhalation"],["Aerosol, Metered","25 mcg + 125 mcg","Inhalation"],["Aerosol, Metered","25 mcg + 250 mcg","Inhalation"],
+  ["Disc","50 mcg + 100 mcg","Inhalation"],["Disc","50 mcg + 250 mcg","Inhalation"],["Disc","50 mcg + 500 mcg","Inhalation"],
+  ["Inhalation, Powder","50 mcg + 100 mcg","Inhalation"],["Inhalation, Powder","50 mcg + 250 mcg","Inhalation"],["Inhalation, Powder","50 mcg + 500 mcg","Inhalation"]
+]],
+["Sertraline","N06AB06","",[["Tablet","25 mg","Oral"],["Tablet","50 mg","Oral"],["Tablet","100 mg","Oral"],["Capsule","50 mg","Oral","E"],["Capsule","100 mg","Oral","E"]]],
+["Sevelamer","V03AE02","",[
+  ["Tablet","800 mg","Oral","E"],["Tablet","800 mg","Oral","E","","Carbonate"],
+  ["Powder, For Suspension","800 mg","Oral","","","Carbonate; sachet"],
+  ["Powder, For Suspension","2.4 g","Oral","","","Carbonate; sachet"]
+]],
+["Sildenafil","G04BE03","",[
+  ["Tablet","20 mg","Oral"],["Tablet","25 mg","Oral"],["Tablet","50 mg","Oral"],["Tablet","100 mg","Oral"],
+  ["Tablet","5 mg","Oral"],
+  ["Film, Dispersible","25 mg","Oral"],["Film, Dispersible","50 mg","Oral"],["Film, Dispersible","75 mg","Oral"],
+  ["Powder, For Suspension","10 mg/ml","Oral"],["Gel","1%","Topical"]
+]],
+["Simvastatin","C10AA01","",[["Tablet","10 mg","Oral"],["Tablet","20 mg","Oral"],["Tablet","40 mg","Oral"]]],
+["Sitagliptin","A10BH01","Type 2 Diabetes Mellitus",[["Tablet","25 mg","Oral"],["Tablet","50 mg","Oral"],["Tablet","100 mg","Oral"]]],
+["Sodium Chloride","B05XA03 / B05CB01","",[
+  ["Injection, Solution","0.9% / 5 ml","Parenteral","EV"],["Injection, Solution","0.9% / 10 ml","Parenteral","EV"],
+  ["Injection, Solution","0.9% / 100 ml","Intravenous Drip","E"],
+  ["Injection, Solution","0.9% / 250 ml","Parenteral","EV"],
+  ["Injection, Solution","0.9% / 500 ml","Intravenous Drip","E"],
+  ["Injection, Solution","0.9% / 1000 ml","Intravenous Drip","EV"],
+  ["Injection, Solution","0.45% / 500 ml","Intravenous Drip","V","H"],
+  ["Injection, Solution","0.45% / 1000 ml","Intravenous Drip","V","H"],
+  ["Injection, Solution","5% / 500 ml","Intravenous Drip","V","H"],
+  ["Injection, Solution","20% / 50 ml","Intravenous Drip","","H"],
+  ["Solution","0.9%","Irrigation","EV","OTC"],
+  ["Spray","0.9%","Nasal","","OTC"]
+]],
+["Spironolactone","C03DA01","",[
+  ["Tablet","25 mg","Oral","E"],["Tablet","50 mg","Oral"],["Tablet","100 mg","Oral","E"],
+  ["Suspension","25 mg/5 ml","Oral"],["Powder, For Suspension","25 mg/5 ml","Oral"]
+]],
+["Streptomycin","J01GA01","",[["Injection, Powder","1 g","Parenteral","EV","H"]]],
+["Tamoxifen","L02BA01","",[["Tablet","10 mg","Oral"],["Tablet","20 mg","Oral","E"]]],
+["Tamsulosin","G04CA02","",[["Capsule, Extended Release, Pellets","0.4 mg","Oral"],["Tablet, Extended Release","0.4 mg","Oral"]]],
+["Tenofovir","J05AF07 / J05AF13","",[
+  ["Tablet","200 mg","Oral","E","MOH","Disoproxil fumarate"],
+  ["Tablet","300 mg","Oral","E","MOH","Disoproxil fumarate"],
+  ["Tablet","25 mg","Oral","E","MOH","Alafenamide"]
+]],
+["Testosterone","G03BA03","",[
+  ["Injection, Solution","100 mg/ml","Parenteral","E","","Enantate"],
+  ["Injection, Solution","250 mg/ml","Parenteral","E","","Enantate"],
+  ["Injection, Solution","1000 mg/4 ml","Parenteral","","","Undecanoate"],
+  ["Capsule","40 mg","Oral","E","","Undecanoate"],
+  ["Gel","1%","Topical"]
+]],
+["Theophylline","R03DA04","",[
+  ["Tablet","200 mg","Oral"],
+  ["Tablet, Extended Release","100 mg","Oral"],["Tablet, Extended Release","200 mg","Oral","E"],
+  ["Capsule, Extended Release, Pellets","100 mg","Oral"],["Capsule, Extended Release, Pellets","200 mg","Oral"],
+  ["Capsule, Extended Release, Pellets","300 mg","Oral"],["Capsule, Extended Release, Pellets","400 mg","Oral"]
+]],
+["Ticagrelor","B01AC24","Antiplatelet",[["Tablet","60 mg","Oral"],["Tablet","90 mg","Oral"]]],
+["Timolol","S01ED01","",[["Solution / Drops","0.5%","Ophthalmic","EV"]]],
+["Tiotropium","R03BB04","",[
+  ["Powder, Inhalation","18 mcg/capsule","Inhalation","V"],
+  ["Solution For Inhalation","1.25 mcg/dose","Inhalation"],
+  ["Solution For Inhalation","2.5 mcg/dose","Inhalation"]
+]],
+["Tobramycin","J01GB01 / S01AA12","Bronchiectasis with Pseudomonas aeruginosa.",[
+  ["Injection, Solution","10 mg/ml","Parenteral","","H"],
+  ["Injection, Solution","40 mg/ml","Parenteral","","H"],
+  ["Injection, Solution","50 mg/ml","Parenteral","","H"],
+  ["Nebulisation","60 mg/ml","Inhalation"],["Nebulisation","75 mg/ml","Inhalation"],
+  ["Nebulisation","300 mg/4 ml","Inhalation"],["Nebulisation","300 mg/5 ml","Inhalation"],
+  ["Ointment","0.3%","Ophthalmic"],["Solution","0.3%","Ophthalmic"]
+]],
+["Topiramate","N03AX11","Lennox-Gastaut syndrome.",[
+  ["Tablet","25 mg","Oral"],["Tablet","50 mg","Oral"],["Tablet","100 mg","Oral"],["Tablet","200 mg","Oral"],
+  ["Capsule, Extended Release","50 mg","Oral"],["Capsule, Extended Release","100 mg","Oral"],["Capsule, Extended Release","150 mg","Oral"]
+]],
+["Tramadol","N02AX02","Treatment of painful HIV-associated neuropathy.",[
+  ["Tablet","50 mg","Oral"],["Tablet","100 mg","Oral"],
+  ["Tablet, Extended Release","100 mg","Oral"],["Tablet, Extended Release","200 mg","Oral"],
+  ["Capsule","50 mg","Oral"],
+  ["Injection, Solution","50 mg/ml","Parenteral","","H"]
+]],
+["Tranexamic Acid","B02AA02","",[
+  ["Capsule","250 mg","Oral","EV"],["Tablet","500 mg","Oral"],
+  ["Injection, Solution","50 mg/ml","Parenteral","","H"],["Injection, Solution","100 mg/ml","Parenteral","EV","H"]
+]],
+["Trastuzumab","L01XC03","Breast cancer (HER2 positive)",[
+  ["Injection, Powder For Reconstitution","150 mg","Parenteral","E"],
+  ["Injection, Powder For Reconstitution","440 mg","Parenteral","E"],
+  ["Injection, Solution","600 mg/5 ml","Parenteral"]
+]],
+["Triamcinolone","D07AB09 / H02AB08 / R01AD11","",[
+  ["Cream","0.1%","Topical"],["Ointment","0.1%","Topical"],["Gel","0.1%","Topical"],
+  ["Paste","0.1%","Oral"],["Spray","55 mcg/actuation","Nasal","","L"],
+  ["Injection, Solution","40 mg/ml","Parenteral"],
+  ["Injection, Powder, Extended Release","32 mg","Intra-articular"]
+]],
+["Valproate Sodium","N03AG01","",[
+  ["Tablet, Delayed Release","200 mg","Oral","E"],
+  ["Tablet, Extended Release","500 mg","Oral","E"],
+  ["Capsule, Extended Release","300 mg","Oral"],
+  ["Syrup","200 mg/5 ml","Oral","E"],["Syrup","300 mg/5 ml","Oral","E"],
+  ["Injection, Solution","100 mg/ml","Parenteral","E","H"],
+  ["Injection, Solution","115 mg/ml","Parenteral","E","H"]
+]],
+["Valsartan","C09CA03","",[
+  ["Tablet","40 mg","Oral"],["Tablet","80 mg","Oral"],["Tablet","160 mg","Oral"],
+  ["Capsule","40 mg","Oral"],["Capsule","80 mg","Oral"],["Capsule","160 mg","Oral"]
+]],
+["Vancomycin","J01XA01 / A07AA09","Glycopeptide antibacterial",[
+  ["Capsule","125 mg","Oral","E"],["Capsule","250 mg","Oral"],
+  ["Capsule, Liquid Filled","125 mg","Oral"],["Capsule, Liquid Filled","250 mg","Oral"],
+  ["Powder, For Solution","500 mg/6 ml","Oral","E"],["Powder, For Solution","25 mg/ml","Oral"],["Powder, For Solution","50 mg/ml","Oral"],
+  ["Injection, Powder","500 mg","Parenteral","EV","H"],["Injection, Powder","1 g","Parenteral","E","H"]
+]],
+["Venlafaxine","N06AX16","",[
+  ["Tablet","37.5 mg","Oral"],["Tablet","75 mg","Oral"],
+  ["Capsule","37.5 mg","Oral"],["Capsule","75 mg","Oral"],
+  ["Capsule, Extended Release","37.5 mg","Oral","","L"],["Capsule, Extended Release","75 mg","Oral"],["Capsule, Extended Release","150 mg","Oral"]
+]],
+["Verapamil","C08DA01","",[["Tablet","40 mg","Oral","E"],["Tablet","80 mg","Oral"],["Tablet, Extended Release","240 mg","Oral"],["Injection, Solution","2.5 mg/ml","Parenteral","EV","H"]]],
+["Voriconazole","J02AC03","Treatment and prophylaxis of invasive fungal infections.",[
+  ["Tablet","50 mg","Oral","E"],["Tablet","200 mg","Oral","EV"],
+  ["Powder, For Suspension","40 mg/ml","Oral"],
+  ["Injection, Powder","200 mg","Parenteral","EV","H"]
+]],
+["Warfarin","B01AA03","",[
+  ["Tablet","1 mg","Oral"],["Tablet","2 mg","Oral"],["Tablet","2.5 mg","Oral"],["Tablet","3 mg","Oral"],
+  ["Tablet","4 mg","Oral"],["Tablet","5 mg","Oral","EV"],["Tablet","6 mg","Oral"],["Tablet","7.5 mg","Oral"],["Tablet","10 mg","Oral"],
+  ["Suspension","1 mg/ml","Oral"]
+]],
+["Zidovudine","J05AF01","Treatment of AIDS related complex.",[
+  ["Capsule","100 mg","Oral","E","MOH"],["Capsule","300 mg","Oral","E","MOH"],
+  ["Tablet","100 mg","Oral","","MOH"],["Tablet","300 mg","Oral","E","MOH"],
+  ["Syrup","50 mg/5 ml","Oral","E","MOH"],
+  ["Injection, Solution, Concentrate","10 mg/ml","Parenteral","E","MOH"]
+]],
+["Zoledronic Acid","M05BA08","",[
+  ["Injection, Powder For Solution","4 mg","Parenteral","E","H"],
+  ["Injection, Solution","4 mg/5 ml","Parenteral","","H"],
+  ["Injection, Solution","5 mg/100 ml","Parenteral","","H"]
+]],
+["Zolpidem","N05CF02","",[
+  ["Tablet","5 mg","Oral"],["Tablet","10 mg","Oral","E"],
+  ["Tablet, Orally Disintegrating","5 mg","Oral"],["Tablet, Orally Disintegrating","10 mg","Oral"],
+  ["Tablet, Extended Release","6.25 mg","Oral"],["Tablet, Extended Release","12.5 mg","Oral"]
+]],
+["Zonisamide","N03AX15","",[["Capsule","25 mg","Oral"],["Capsule","50 mg","Oral"],["Capsule","100 mg","Oral"],["Tablet","100 mg","Oral"]]]
+];
+
+/* =========================================================================
+   NORMALISATION
+   ========================================================================= */
+const ACCESS = {
+  OTC:  { label:"OTC",            cls:"otc",   full:"Over-the-counter" },
+  H:    { label:"Hospital",       cls:"hosp",  full:"Hospital only" },
+  MOH:  { label:"MOH",            cls:"moh",   full:"Health Dept. of MOH only" },
+  L:    { label:"Local",          cls:"local", full:"Local production only" }
+};
+
+const drugs = RAW.map(([name, atc, indication, forms]) => {
+  const f = forms.map(([form, strength, route, flags, access, note]) => ({
+    form:   form   || "",
+    strength: strength || "",
+    route:  route  || "",
+    flags:  flags  || "",
+    access: access || "",
+    note:   note   || ""
+  }));
+
+  const accessSet = [...new Set(f.map(x => x.access).filter(Boolean))];
+  const routes    = [...new Set(f.map(x => x.route).filter(Boolean))].sort();
+  const formSet   = [...new Set(f.map(x => x.form).filter(Boolean))].sort();
+
+  const haystack = (
+    name + " " + (atc || "") + " " + (indication || "") + " " +
+    f.map(x => x.form + " " + x.strength + " " + x.route + " " + x.note).join(" ")
+  ).toLowerCase();
+
+  return {
+    name,
+    atc: atc || "",
+    indication: indication || "",
+    forms: f,
+    accessSet,
+    routes,
+    formSet,
+    essential: f.some(x => x.flags.includes("E")),
+    vital:     f.some(x => x.flags.includes("V")),
+    _s: haystack
+  };
+}).sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity:"base" }));
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+const state = {
+  q: "",
+  access: "",
+  route: "",
+  form: "",
+  essential: false,
+  vital: false
+};
+const expanded = new Set();
+
+/* =========================================================================
+   DOM
+   ========================================================================= */
+const grid        = document.getElementById("grid");
+const stats       = document.getElementById("stats");
+const searchInput = document.getElementById("search");
+const clearSearch = document.getElementById("clearSearch");
+const fAccess     = document.getElementById("fAccess");
+const fRoute      = document.getElementById("fRoute");
+const fForm       = document.getElementById("fForm");
+const fEssential  = document.getElementById("fEssential");
+const fVital      = document.getElementById("fVital");
+const resetBtn    = document.getElementById("resetBtn");
+const themeBtn    = document.getElementById("themeBtn");
+const headerEl    = document.getElementById("siteHeader");
+
+/* =========================================================================
+   HELPERS
+   ========================================================================= */
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[c]));
+}
+function hl(text, q){
+  if (!q) return esc(text);
+  const lower = text.toLowerCase();
+  const i = lower.indexOf(q);
+  if (i === -1) return esc(text);
+  return esc(text.slice(0, i)) +
+         "<mark>" + esc(text.slice(i, i + q.length)) + "</mark>" +
+         esc(text.slice(i + q.length));
+}
+
+/* =========================================================================
+   POPULATE FILTERS
+   ========================================================================= */
+(function buildFilters(){
+  const accessVals = new Set();
+  const routeVals  = new Set();
+  const formVals   = new Set();
+
+  drugs.forEach(d => {
+    d.accessSet.forEach(a => accessVals.add(a));
+    d.routes.forEach(r => routeVals.add(r));
+    d.formSet.forEach(f => formVals.add(f));
+  });
+
+  [...accessVals].sort().forEach(v => {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = (ACCESS[v] ? ACCESS[v].full : v);
+    fAccess.appendChild(o);
+  });
+
+  [...routeVals].sort().forEach(v => {
+    const o = document.createElement("option");
+    o.value = v; o.textContent = v;
+    fRoute.appendChild(o);
+  });
+
+  [...formVals].sort().forEach(v => {
+    const o = document.createElement("option");
+    o.value = v; o.textContent = v;
+    fForm.appendChild(o);
+  });
+})();
+
+/* =========================================================================
+   RENDER
+   ========================================================================= */
+const FORM_LIMIT = 6;
+
+function render(){
+  const q = state.q;
+
+  const filtered = drugs.filter(d => {
+    if (q && !d._s.includes(q)) return false;
+    if (state.access && !d.accessSet.includes(state.access)) return false;
+    if (state.route  && !d.routes.includes(state.route)) return false;
+    if (state.form   && !d.formSet.includes(state.form)) return false;
+    if (state.essential && !d.essential) return false;
+    if (state.vital     && !d.vital) return false;
+    return true;
+  });
+
+  let totalForms = 0;
+  filtered.forEach(d => totalForms += d.forms.length);
+
+  /* ---- stats ---- */
+  stats.innerHTML =
+    `<b>${filtered.length}</b> drug${filtered.length === 1 ? "" : "s"} ` +
+    `<span class="dot"></span> <b>${totalForms}</b> dosage form${totalForms === 1 ? "" : "s"}` +
+    (filtered.length !== drugs.length ? ` <span class="dot"></span> of ${drugs.length} total` : "");
+
+  /* ---- empty ---- */
+  if (!filtered.length){
+    grid.innerHTML = `
+      <div class="empty">
+        <span class="emoji">🔍</span>
+        <h3>No drugs found</h3>
+        <p>Try a different search term or reset the filters.</p>
+      </div>`;
+    return;
+  }
+
+  /* ---- cards ---- */
+  const html = filtered.map((d, idx) => {
+    const isOpen = expanded.has(d.name);
+    const shown  = isOpen ? d.forms : d.forms.slice(0, FORM_LIMIT);
+    const hidden = d.forms.length - shown.length;
+
+    const badges = [];
+    if (d.essential) badges.push('<span class="badge e" title="Essential medicine">Essential</span>');
+    if (d.vital)     badges.push('<span class="badge v" title="Vital medicine">Vital</span>');
+    d.accessSet.forEach(a => {
+      const meta = ACCESS[a];
+      if (meta) badges.push(`<span class="badge ${meta.cls}" title="${esc(meta.full)}">${esc(meta.label)}</span>`);
+      else      badges.push(`<span class="badge local">${esc(a)}</span>`);
+    });
+
+    const formsHTML = shown.map(f => {
+      const minis =
+        (f.flags.includes("E") ? '<span class="mini e" title="Essential">E</span>' : "") +
+        (f.flags.includes("V") ? '<span class="mini v" title="Vital">V</span>' : "");
+      const title = f.note ? ` title="${esc(f.note)}"` : "";
+      return `<li class="form"${title}>
+        ${f.strength ? `<span class="strength">${esc(f.strength)}</span>` : ""}
+        <span class="fname">${esc(f.form)}</span>
+        ${f.route ? `<span class="route">${esc(f.route)}</span>` : ""}
+        ${minis}
+      </li>`;
+    }).join("");
+
+    return `<article class="card" style="animation-delay:${Math.min(idx * 14, 320)}ms">
+      <div class="card-head">
+        <h2 class="card-title">${hl(d.name, q)}</h2>
+        <span class="count-pill">${d.forms.length} form${d.forms.length === 1 ? "" : "s"}</span>
+      </div>
+      ${d.atc ? `<span class="atc">${esc(d.atc)}</span>` : ""}
+      ${d.indication ? `<p class="indication">${esc(d.indication)}</p>` : ""}
+      ${badges.length ? `<div class="badges">${badges.join("")}</div>` : ""}
+      <ul class="forms">${formsHTML}</ul>
+      ${hidden > 0 ? `<button class="more-btn" data-more="${esc(d.name)}">+ Show ${hidden} more form${hidden === 1 ? "" : "s"}</button>` : ""}
+      ${isOpen && d.forms.length > FORM_LIMIT ? `<button class="more-btn" data-more="${esc(d.name)}">− Show fewer</button>` : ""}
+    </article>`;
+  }).join("");
+
+  grid.innerHTML = html;
+}
+
+/* =========================================================================
+   EVENTS
+   ========================================================================= */
+let searchTimer;
+searchInput.addEventListener("input", e => {
+  state.q = e.target.value.trim().toLowerCase();
+  clearSearch.classList.toggle("show", e.target.value.length > 0);
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(render, 110);
+});
+
+clearSearch.addEventListener("click", () => {
+  searchInput.value = "";
+  state.q = "";
+  clearSearch.classList.remove("show");
+  searchInput.focus();
+  render();
+});
+
+fAccess.addEventListener("change", e => {
+  state.access = e.target.value;
+  e.target.classList.toggle("filled", !!e.target.value);
+  render();
+});
+fRoute.addEventListener("change", e => {
+  state.route = e.target.value;
+  e.target.classList.toggle("filled", !!e.target.value);
+  render();
+});
+fForm.addEventListener("change", e => {
+  state.form = e.target.value;
+  e.target.classList.toggle("filled", !!e.target.value);
+  render();
+});
+fEssential.addEventListener("click", () => {
+  state.essential = !state.essential;
+  fEssential.classList.toggle("on", state.essential);
+  render();
+});
+fVital.addEventListener("click", () => {
+  state.vital = !state.vital;
+  fVital.classList.toggle("on", state.vital);
+  render();
+});
+
+resetBtn.addEventListener("click", () => {
+  state.q = ""; state.access = ""; state.route = ""; state.form = "";
+  state.essential = false; state.vital = false;
+  searchInput.value = "";
+  clearSearch.classList.remove("show");
+  fAccess.value = ""; fRoute.value = ""; fForm.value = "";
+  fAccess.classList.remove("filled"); fRoute.classList.remove("filled"); fForm.classList.remove("filled");
+  fEssential.classList.remove("on"); fVital.classList.remove("on");
+  expanded.clear();
+  render();
+});
+
+/* expand / collapse dosage forms */
+grid.addEventListener("click", e => {
+  const btn = e.target.closest("[data-more]");
+  if (!btn) return;
+  const name = btn.getAttribute("data-more");
+  if (expanded.has(name)) expanded.delete(name);
+  else expanded.add(name);
+  render();
+});
+
+/* =========================================================================
+   THEME
+   ========================================================================= */
+const THEME_KEY = "formulary-theme";
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  themeBtn.textContent = t === "dark" ? "☀️" : "🌙";
+  themeBtn.title = t === "dark" ? "Switch to light mode" : "Switch to dark mode";
+  try { localStorage.setItem(THEME_KEY, t); } catch(e){}
+}
+(function initTheme(){
+  let saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch(e){}
+  if (!saved){
+    saved = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  applyTheme(saved);
+})();
+themeBtn.addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  applyTheme(cur === "dark" ? "light" : "dark");
+});
+
+/* =========================================================================
+   HEADER SHADOW ON SCROLL
+   ========================================================================= */
+window.addEventListener("scroll", () => {
+  headerEl.classList.toggle("scrolled", window.scrollY > 8);
+}, { passive: true });
+
+/* =========================================================================
+   KEYBOARD SHORTCUTS
+   ========================================================================= */
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && document.activeElement !== searchInput){
+    e.preventDefault();
+    searchInput.focus();
+    searchInput.select();
+  }
+  if (e.key === "Escape" && document.activeElement === searchInput){
+    searchInput.value = "";
+    state.q = "";
+    clearSearch.classList.remove("show");
+    render();
+  }
+});
+
+/* =========================================================================
+   GO
+   ========================================================================= */
+render();
+</script>
+</body>
+</html>
